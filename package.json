@@ -1,0 +1,23 @@
+{
+  "name": "auctrix",
+  "version": "1.0.0",
+  "main": "dist/auctrix.js",
+  "types": "dist/auctrix.d.ts",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Sean Toner"
+  },
+  "description": "A simple state management system using rxjs with an rxjs to websocket bridge",
+  "search": [
+    "state management",
+    "rxjs"
+  ],
+  "dependencies": {
+    "immutable": "^3.8.2",
+    "rxjs": "^5.5.7",
+    "ws": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^2.7.2"
+  }
+}
