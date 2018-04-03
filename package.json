@@ -1,8 +1,8 @@
 {
   "name": "auctrix",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "main": "dist/auctrix.js",
-  "types": "dist/auctrix.d.ts",
+  "types": "src/auctrix.d.ts",
   "license": "Apache-2.0",
   "author": {
     "name": "Sean Toner"
@@ -14,10 +14,17 @@
   ],
   "dependencies": {
     "immutable": "^3.8.2",
+    "jasmine": "^3.1.0",
+    "jasmine-ts": "^0.2.1",
     "rxjs": "^5.5.7",
     "ws": "^5.1.0"
   },
   "devDependencies": {
-    "typescript": "^2.7.2"
+    "@types/node": "^9.6.1",
+    "typescript": "^2.8.1"
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "build": "yarn run clean && tsc"
   }
 }
