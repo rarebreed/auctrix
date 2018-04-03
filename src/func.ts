@@ -1,6 +1,7 @@
 export class Just<T> {
-    public constructor(protected value: T) {
-
+    value: T
+    public constructor(value: T) {
+        this.value = value
     }
 
     public get(): T {

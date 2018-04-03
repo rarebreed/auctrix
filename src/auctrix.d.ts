@@ -4,11 +4,31 @@
  * TODO: Move this into a separate npm module.
  */
 
-import { Observable } from 'rxjs/Observable'
-import { Subject } from 'rxjs/Subject'
-import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import * as Rx from 'rxjs/Rx'
 import { List, Range } from 'immutable'
 import { Just, Maybe } from './func'
+
+export type LogLevels = 'error' | 'warn' | 'info' | 'verbose' | 'debug'
+
+export interface LogMessage {
+    msg: string,
+    level: LogLevels
+}
+
+declare class LogMsg implements LogMessage {
+    msg: string
+    level: LogLevels
+}
+
+declare class Logger {
+    ws: WebSocket
+
+    log: (level: LogLevels, msg: string) => void
+    info: (msg: string) => void
+    error: (msg: string) => void
+    debug: (msg: string) => void
+    warn: (msg: string) => void
+}
 
 /**
  * The TextMessage defines a very simple message protocol for sending/receiving messages across websocket clients
@@ -39,7 +59,7 @@ export interface Record {
 }
 
 export interface StreamInfo<T> extends Record {
-    stream: Observable<T> | Subject<T>;
+    stream: Rx.Observable<T> | Rx.Subject<T> | null;
 }
 
 // An interface describing how to lookup a StreamInfo entry
@@ -58,6 +78,14 @@ declare function getMatched<T>(matched: matcher<T>): Maybe<IndexedStreamInfo<T>>
 
 type LookupResult<T> = Error | Array<IndexedStreamInfo<T>>
 
+declare function 
+makeStreamInfo<T extends {}>
+              ( cName: string
+              , sName: string
+              , sType: string
+              , start: T | Rx.Observable<T> | Rx.Subject<T>)
+              : StreamInfo<T>
+
 /**
  * Filters the List of StreamInfo from this.streams based on the data in lookup
  * 
@@ -68,8 +96,10 @@ type LookupResult<T> = Error | Array<IndexedStreamInfo<T>>
  * TODO: This is a poor way to find the stream we need.  It's a O(n) (actually (O(n*3))), but we should probably
  * store this.streams as nested maps: Map<string, Map<string, StreamInfo<any>>>
  */
-declare function lookup<T>( search: Lookup
-                          , streams: List<StreamInfo<any>>): LookupResult<T>
+declare function 
+lookup<T>( search: Lookup
+         , streams: List<StreamInfo<any>>)
+         : LookupResult<T>
 
 /**
  * An in-memory data structure that holds all the stored streams (as StreamInfo types)
@@ -84,7 +114,7 @@ declare function lookup<T>( search: Lookup
  */
 declare class Dispatch {
     streams: List<StreamInfo<any>>
-    info: Subject<Record>
+    info: Rx.BehaviorSubject<Record>
 
     // TODO: this.info.next() should send a TextMessage with the data field set to the Record
     register<T>(smap: StreamInfo<T>): void
@@ -105,6 +135,8 @@ export class WStoStreamBridge {
     ws: WebSocket
     dispatch: Maybe<Dispatch>
     streams: List<StreamInfo<any>>
+
+    constructor(url: string, disp?: Dispatch)
 
     /**
      * Adds a StreamInfo object to thee internal this.streams.
@@ -127,6 +159,18 @@ export class WStoStreamBridge {
      * We only unbridge from the internel this.streams, not from this.dispatch.streams
      */
     unbridge(search: Lookup): void
+}
+
+declare namespace Func {
+    export class Just<T> {
+        value: T
+        public constructor(value: T)
+    
+        public get(): T
+    }
+    
+    export type Maybe<T> = Just<T> | null
+    export type Optional<T> = T | null
 }
 
 declare const dispatch: Dispatch

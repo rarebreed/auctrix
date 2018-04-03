@@ -6,10 +6,13 @@ import { TextMessage
        , LookupResult
        , Record } from './auctrix.d'
 import { Just, Maybe } from './func'
+import { List, Range } from 'immutable'
+/* import { Stream } from 'stream';
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
-import { List, Range } from 'immutable'
+*/
+import * as Rx from 'rxjs/Rx'
 
 export const 
 makeRequest = ( op: string
@@ -38,18 +41,19 @@ export const
 makeStreamInfo = <T extends {}>( cName: string
                                , sName: string
                                , sType: string
-                               , start: T | Observable<T> | Subject<T>) => {
+                               , start: T | Rx.Observable<T> | Rx.Subject<T>) => {
     return {
         component: cName,
         streamName: sName,
         streamType: sType,
-        stream: start instanceof Observable ? start : 
-                start instanceof Subject ? start : 
-                new BehaviorSubject(start)
+        stream: start instanceof Rx.Observable ? start : 
+                start instanceof Rx.Subject ? start : 
+                new Rx.BehaviorSubject(start)
     } as StreamInfo<T>
 }
 
-export const getMatched = <T>(matched: matcher<T>) => {
+export const 
+getMatched = <T>(matched: matcher<T>) => {
     if (matched instanceof Error)
         return null
     if (matched.length === 0)
@@ -62,7 +66,7 @@ export const getMatched = <T>(matched: matcher<T>) => {
 
 
 /**
- * Filters the List of StreamInfo from this.streams based on the data in lookup
+ * Filters the List of StreamInfo from dispatch.streams based on the data in lookup
  * 
  * Will throw an error if no fields at all defined in lookup, or if using one of the field name and the index type
  * but they dont both match.  It returns an array of [number, StreamInfo<T>] tuples.  It returns this format so that
@@ -114,16 +118,25 @@ lookup = <T>( search: Lookup
  */
 export class Dispatch {
     streams: List<StreamInfo<any>>
-    info: Subject<Record>
+    //info: BehaviorSubject<Record>
+    info: Rx.BehaviorSubject<StreamInfo<any>>
 
     constructor() {
         this.streams = List()
-        this.info = new Subject()
+        let selfRecord = {
+            component: "dispatch",
+            streamName: "info",
+            streamType: "Record",
+            action: 'mounted',
+            stream: null
+        } as StreamInfo<any>
+        this.info = new Rx.BehaviorSubject(selfRecord)
     }
 
     // TODO: this.info.next() should send a TextMessage with the data field set to the Record
     register = <T>(smap: StreamInfo<T>) => {
         this.streams = this.streams.push(smap)
+        /*
         let {component, streamName, streamType} = smap
         let rec = {
             component: component,
@@ -131,7 +144,8 @@ export class Dispatch {
             streamType: streamType,
             action: 'mounted'
         } as Record
-        this.info.next(rec)
+        */
+        this.info.next(smap)
     }
 
     /**
@@ -154,8 +168,9 @@ export class Dispatch {
         let [index, toRemove] = matched[0]
         console.log(`Removing ${toRemove} at index ${index}`)
         this.streams = this.streams.delete(index)
-        let info = Object.assign({action: 'unmounted'}, rec)
-        this.info.next(info)
+        toRemove.stream = null
+        toRemove.action = 'unmounted'
+        this.info.next(toRemove)
         return toRemove as StreamInfo<T>
     }
 }
@@ -169,7 +184,7 @@ export class WStoStreamBridge {
     dispatch: Maybe<Dispatch>
     streams: List<StreamInfo<any>> = List()
 
-    constructor(disp?: Dispatch, url: string = 'ws://localhost:9000/') {
+    constructor(url: string = 'ws://localhost:9000/', disp?: Dispatch) {
         if (disp === undefined)
             this.dispatch = null
         else
@@ -189,7 +204,7 @@ export class WStoStreamBridge {
      * we may want to debounce or accumulate events and send them at once.
      */
     add = <T>(si: StreamInfo<T>) => {
-        let stream$ = si.stream as Subject<T>
+        let stream$ = si.stream as Rx.Subject<T>
         stream$.subscribe(
             next => {
                 this.ws.send(JSON.stringify(next, null, 2))
@@ -243,4 +258,4 @@ export class WStoStreamBridge {
 
 // Technically dispatch is not a Singleton, as a program might have need of multiple Dispatches, however, the
 // common use case will be to have a singular Dispatch object
-export const dispatch = new Dispatch()
+export const dispatch: Dispatch = new Dispatch()
