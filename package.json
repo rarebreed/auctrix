@@ -1,6 +1,6 @@
 {
   "name": "auctrix",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "dist/auctrix.js",
   "types": "src/auctrix.d.ts",
   "license": "Apache-2.0",
