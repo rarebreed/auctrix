@@ -173,4 +173,20 @@ declare namespace Func {
     export type Optional<T> = T | null
 }
 
+/// For the node ws websocket.
+/// For browser based websockets just use typescript's regular WebSocket type
+declare namespace NodeWS {
+    export class NWebSocket {
+        /*
+        on(type: string, hdlr: () => void): void                 // for on("open")
+        on(type: string, hdlr: (message: string) => void): void  // for on("message")
+        on(type: string, hdlr: (ws: NWebSocket) => void): void   // for on("connection")
+        */
+        onopen: () => void
+        onmessage: (message: string) => void
+        onconnect: (ws: NWebSocket) => void
+        send(data: string): void
+    }
+}
+
 declare const dispatch: Dispatch

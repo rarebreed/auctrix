@@ -2,8 +2,7 @@ import { dispatch } from '../src/auctrix'
 import { StreamInfo } from '../src/auctrix.d'
 import { Logger } from '../src/libs/logger'
 import * as Rx from 'rxjs/Rx'
-import 'jasmine'
-const WebSocket = require('ws')
+// const WS = require('ws')
 
 // 1. Create a producer
 let prod$ = Rx.Observable.from([1, 2, 3])
@@ -19,10 +18,11 @@ let prodInfo: StreamInfo<number> = {
 dispatch.register(prodInfo)
 
 // 3. Create a logger
-let ws = new WebSocket('ws://localhost:4000/ws')
-let logger = new Logger(ws)
+let logger = new Logger('ws://localhost:4001/ws')
+logger.info('Hello World')
 
 // 4. Create a consumer that will do what we want
+/*
 let consumer: Rx.Observer<number> = {
     next(n: number) {
         logger.info(`Got a number of ${n}`)
@@ -43,3 +43,4 @@ dispatch.info.subscribe({
         r.stream.subscribe(consumer)
     }
 })
+*/

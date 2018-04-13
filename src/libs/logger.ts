@@ -1,12 +1,35 @@
-import { LogLevels } from '../auctrix.d'
+import { LogLevels, NodeWS } from '../auctrix.d'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+const WS = require('ws')
 
 export class Logger {
-    ws: WebSocket
+    ws: NodeWS.NWebSocket
+    subject: BehaviorSubject<{level: string, msg: string}>
 
-    constructor(ws: WebSocket) {
-        this.ws = ws
-        ws.onopen = (evt: Event) => {
+    constructor(webs: NodeWS.NWebSocket | string) {
+        this.subject = new BehaviorSubject({level: "info", msg: 'default'})
+        if (webs instanceof String) {
+            this.ws = new WS(webs)
+        }
+        if (webs instanceof NodeWS.NWebSocket)
+            this.ws = webs
+        this.ws.onopen = () => {
             console.log("Websocket is open")
+            this.subject.subscribe({
+                next: (n) => {
+                    this.ws.send(JSON.stringify(n))
+                },
+                error: (e) => {
+                    this.ws.send(JSON.stringify(e))
+                },
+                complete: () => console.log('Subject completed')
+            })
+        }
+        this.ws.onmessage = (msg: string) => {
+            console.log(`received: ${msg}`)
+        }
+        this.ws.onconnect = (webs: NodeWS.NWebSocket) => {
+            console.log(('Got a connection'))
         }
     }
 
@@ -28,7 +51,7 @@ export class Logger {
             default:
                 console.log(msg)
         }
-        this.ws.send(JSON.stringify({level: level, msg: msg}))
+        this.subject.next({level: level, msg: msg})
     }
 
     log = (level: LogLevels, msg: string) => this._log(level)(msg)    
@@ -36,4 +59,9 @@ export class Logger {
     error = this._log('error')
     debug = this._log('debug')
     warn = this._log('warn')
+
+    test = () => {
+        console.log('testing')
+        this.ws.send(JSON.stringify({msg: 'testing'}))
+    }
 }
